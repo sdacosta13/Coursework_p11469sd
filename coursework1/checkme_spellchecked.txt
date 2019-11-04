@@ -1,0 +1,9 @@
+23/10/2019 19:05:16
+Number of words: 51
+Number of correctly spelt words: 47
+Number of incorrectly spelt words: 0
+Number ignored: 3
+Number added to dictionary: 0
+Number markered: 0
+
+python is an interpreted high level general purpose programming language created by !guido! van possum and first released in pythons design philosophy emphasizes code readability with its notable use of significant !whitespace! its language constructs and !objectoriented! approach aim to help programmers write clear logical code for small and large projects
