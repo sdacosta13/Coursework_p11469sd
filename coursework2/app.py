@@ -9,7 +9,7 @@ character sprites: https://davidjakubec.itch.io/characters-sprite-sheet
 Dungeon sprites: https://0x72.itch.io/dungeontileset-ii
 """
 
-hitsOn = True
+hitsOn = False
 
 
 def overlapping(a,b):
@@ -35,7 +35,7 @@ class App():
         self.window.geometry('%dx%d' % (self.width, self.height))
         self.canvas = Canvas(self.window, bg = "red", width = self.width, height = self.height)
         self.canvas.focus_force()
-        self.loopSpeed = 10
+        self.loopSpeed = 50
         self.ticks = 0
         self.tickText = self.canvas.create_text(self.width-30, 15, fill = "white", font="Verdana 20 italic bold", text=str(self.ticks))
 
@@ -142,45 +142,57 @@ def get2Dlist(x,y,fill = "#"):
     for y1 in range(y):
         inner = []
         for x1 in range(x):
-            inner.append(x1)
-        outer.append(inner)
+            inner.append(str(x1))
+        outer.append(list(inner))
     return outer
 
 class Background:
     def __init__(self, width, height):
-        wFillNum = int(width/16)
-        hFillNum = int(height/16)
+        wFillNum = int(width/16)*16 + 16
+        hFillNum = int(height/16)*16
+        img1 = PhotoImage(master = app.canvas, file="floor_1.png")
+        app.window.img1 = img1
+        img2 = PhotoImage(master = app.canvas, file="floor_2.png")
+        app.window.img2 = img2
+        img3 = PhotoImage(master = app.canvas, file="floor_3.png")
+        app.window.img3 = img3
+        img4 = PhotoImage(master = app.canvas, file="floor_4.png")
+        app.window.img4 = img4
+        img5 = PhotoImage(master = app.canvas, file="floor_5.png")
+        app.window.img5 = img5
+        img6 = PhotoImage(master = app.canvas, file="floor_6.png")
+        app.window.img6 = img6
+        img7 = PhotoImage(master = app.canvas, file="floor_7.png")
+        app.window.img7 = img7
+        img8 = PhotoImage(master = app.canvas, file="floor_8.png")
+        app.window.img8 = img8
         self.matrix = get2Dlist(wFillNum, hFillNum)
-        for x in range(0, width, 16):
-            for y in range(0, height, 16):
-                choice = random.randint(1,9)
+        for x in range(0, wFillNum, 16):
+            for y in range(0, hFillNum, 16):
+                choice = random.randint(1,8)
+                img = ""
+                print(choice)
                 if choice == 1:
-                    img = PhotoImage(master = app.canvas, file="floor_1.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img1)
                 elif choice == 2:
-                    img = PhotoImage(master = app.canvas, file="floor_2.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img2)
                 elif choice == 3:
-                    img = PhotoImage(master = app.canvas, file="floor_3.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img3)
                 elif choice == 4:
-                    img = PhotoImage(master = app.canvas, file="floor_4.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img4)
                 elif choice == 5:
-                    img = PhotoImage(master = app.canvas, file="floor_5.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img5)
                 elif choice == 6:
-                    img = PhotoImage(master = app.canvas, file="floor_6.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img6)
                 elif choice == 7:
-                    img = PhotoImage(master = app.canvas, file="floor_7.png")
-
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img7)
                 elif choice == 8:
-                    img = PhotoImage(master = app.canvas, file="floor_8.png")
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img8)
+                app.canvas.tag_lower(self.matrix[y][x])
 
-                if not (y >= len(self.matrix) or x >= len(self.matrix[0])):
-                    print("run")
-                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img)
+
+
+
 
 
 
@@ -188,7 +200,7 @@ class Background:
 class Sprite:
     def __init__(self, image, x, y, showHitbox = False):
         global app
-        self.moveSpeed = 3
+        self.moveSpeed = 15
         img = PhotoImage(master = app.canvas, file=image)
         imgDimensions = [img.width(), img.height()]
         app.img = img
