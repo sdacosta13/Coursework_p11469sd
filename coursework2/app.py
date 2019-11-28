@@ -11,6 +11,7 @@ Dungeon sprites: https://0x72.itch.io/dungeontileset-ii
 
 hitsOn = True
 
+
 def overlapping(a,b):
     a = canvas.coords(a)
     b = canvas.coords(b)
@@ -50,6 +51,7 @@ class App():
         self.canvas.bind()
 
     def main(self):
+        self.background = Background(self.width, self.height)
         self.canvas.bind("<KeyPress>", self.keyPressedHandler)
         self.canvas.bind("<KeyRelease>", self.releaseHandler)
         self.canvas.bind("<Motion>", self.handleMouseMovement)
@@ -110,74 +112,75 @@ class Weapon:
         global app
         self.rotation = 0
         width = 10
-        length = 70
+        self.length = 70
         self.x = x
         self.y = y
-        self.coords = [x-(width/2), y-(width/2),
-        x+length, y-(width/2),
-        x+length, y+(width/2),
-        x-(width/2), y+(width/2)
+        self.coords = [x,y,x+self.length, y]
 
-        ]
+        self.skin = app.canvas.create_line(self.coords,fill = "brown",width=width)
+        app.canvas.tag_lower(self.skin)
 
-        self.skin = app.canvas.create_polygon(self.coords,fill = "brown",outline="")
-    def rotate(self, angle):
-        temp = self.coords
-        for i in range(0,len(temp),2):
-            #move shape to origin then use matrix multiplication to rotate
-            temp[i] -= self.x
-            temp[i+1] -= self.y
-            new = []
-            #aliases
-
-            x = temp[i]
-            y = temp[i+1]
-            new.append((x*math.cos(angle))-(y*math.sin(angle)))
-            new.append((x*math.sin(angle))+(y*math.cos(angle)))
-
-            temp[i] = new[0]
-            temp[i+1] = new[1]
-
-            #move back
-            temp[i] += self.x
-            temp[i+1] += self.y
-
-        self.coords = temp
-        app.canvas.coords(self.skin, self.coords)
-        self.rotation += angle
     def move(self,x,y):
         app.canvas.move(self.skin, x, y)
         self.x += x
         self.y += y
 
     def pointAtMouse(self):
-        """
         if (app.mouseX-self.x != 0):
             angle = math.atan((app.mouseY-self.y)/(app.mouseX-self.x))
-            print(angle * 180 / math.pi)
-            self.rotate(angle-self.rotation)
+            self.rotate(angle)
             self.rotation = angle
-        """
-        pi = math.pi
-        self.rotate(-self.rotation)
-        print(self.rotation)
-        if (app.mouseX-self.x != 0):
-            angle = math.atan((app.mouseY-self.y)/(app.mouseX-self.x))
 
-            if app.mouseY <= self.y and app.mouseX >= self.x:
-                #first quad
-                self.rotate(angle)
-            elif app.mouseY >= self.y and app.mouseX >= self.x:
-                #second quad
-                self.rotate(angle)
-            elif app.mouseY >= self.y and app.mouseX <= self.x:
-                #third quad
-                self.rotate(angle+pi)
-            elif app.mouseY <= self.y and app.mouseX <= self.x:
-                #fourth quad
-                self.rotate(angle-pi)
+    def rotate(self, angle):
+        if app.mouseX < self.x:
+            self.coords = [self.x, self.y, self.x+(self.length*math.cos(angle+math.pi)), self.y+(self.length*math.sin(angle+math.pi))]
+        else:
+            self.coords = [self.x, self.y, self.x+(self.length*math.cos(angle)), self.y+(self.length*math.sin(angle))]
+        app.canvas.coords(self.skin, self.coords)
+def get2Dlist(x,y,fill = "#"):
+    outer = []
+    for y1 in range(y):
+        inner = []
+        for x1 in range(x):
+            inner.append(x1)
+        outer.append(inner)
+    return outer
 
+class Background:
+    def __init__(self, width, height):
+        wFillNum = int(width/16)
+        hFillNum = int(height/16)
+        self.matrix = get2Dlist(wFillNum, hFillNum)
+        for x in range(0, width, 16):
+            for y in range(0, height, 16):
+                choice = random.randint(1,9)
+                if choice == 1:
+                    img = PhotoImage(master = app.canvas, file="floor_1.png")
 
+                elif choice == 2:
+                    img = PhotoImage(master = app.canvas, file="floor_2.png")
+
+                elif choice == 3:
+                    img = PhotoImage(master = app.canvas, file="floor_3.png")
+
+                elif choice == 4:
+                    img = PhotoImage(master = app.canvas, file="floor_4.png")
+
+                elif choice == 5:
+                    img = PhotoImage(master = app.canvas, file="floor_5.png")
+
+                elif choice == 6:
+                    img = PhotoImage(master = app.canvas, file="floor_6.png")
+
+                elif choice == 7:
+                    img = PhotoImage(master = app.canvas, file="floor_7.png")
+
+                elif choice == 8:
+                    img = PhotoImage(master = app.canvas, file="floor_8.png")
+
+                if not (y >= len(self.matrix) or x >= len(self.matrix[0])):
+                    print("run")
+                    self.matrix[y][x] = app.canvas.create_image(x,y, image = img)
 
 
 
@@ -256,22 +259,22 @@ class Character(Sprite):
             app.canvas.move(self.img, 0, -self.moveSpeed)
             app.canvas.move(self.hitbox, 0, -self.moveSpeed)
             self.weapon.move(0, -self.moveSpeed)
-            self.weapon.y -= self.moveSpeed
+
         if self.movement[1]:
             app.canvas.move(self.img, -self.moveSpeed, 0)
             app.canvas.move(self.hitbox, -self.moveSpeed, 0)
             self.weapon.move(-self.moveSpeed, 0)
-            self.weapon.x -= self.moveSpeed
+
         if self.movement[2]:
             app.canvas.move(self.img, 0, self.moveSpeed)
             app.canvas.move(self.hitbox, 0, self.moveSpeed)
             self.weapon.move(0, self.moveSpeed)
-            self.weapon.y += self.moveSpeed
+
         if self.movement[3]:
             app.canvas.move(self.img, self.moveSpeed, 0)
             app.canvas.move(self.hitbox, self.moveSpeed, 0)
             self.weapon.move(self.moveSpeed, 0)
-            self.weapon.x += self.moveSpeed
+
     def updateSkin(self):
         if self.movement[0]:
             app.canvas.itemconfigure(self.img, image = self.cBehind)
