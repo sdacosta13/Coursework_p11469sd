@@ -20,7 +20,8 @@ def getPlatform():
     platforms = {
         'linux1' : 'Linux',
         'linux2' : 'Linux',
-        'win32' : 'Windows'
+        'win32' : 'Windows',
+        'linux' : 'Linux'
     }
     if sys.platform not in platforms:
         return sys.platform
@@ -28,7 +29,7 @@ def getPlatform():
     return platforms[sys.platform]
 global osName
 osName = getPlatform()
-
+print (osName)
 hitsOn = False
 
 
@@ -48,6 +49,7 @@ def getMatrix(obj):
     return list1
 class App():
     def __init__(self):
+        global osName
         self.width = 1920
         self.height = 1080
         self.spacePressed = 0
@@ -68,59 +70,126 @@ class App():
         self.multiplier = 1
         self.score = 0
         self.drops = []
+        self.paused = False
         self.gameover = False
+        coordsTop = [self.width/2 - self.width/16,
+                        self.height/2 - (7*self.height/16),
+                        self.width/2 + self.width/16,
+                        self.height/2 - 5*self.height/16]
+        self.pauseB = [self.canvas.create_rectangle(0,0,self.width,self.height, fill = "red", state = "hidden"),
+        self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"),
+        self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Return to game", fill = "white", font="Verdana 20 italic bold")]
+        self.canvas.tag_bind(self.pauseB[1], "<Button-1>",self.unpause)
+        self.canvas.tag_bind(self.pauseB[2], "<Button-1>",self.unpause)
+        coordsTop[1] += self.height/6
+        coordsTop[3] += self.height/6
+        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
+        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Save", fill = "white", font="Verdana 20 italic bold"))
+        coordsTop[1] += self.height/6
+        coordsTop[3] += self.height/6
+        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
+        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Key bindings", fill = "white", font="Verdana 20 italic bold"))
+        self.canvas.tag_bind(self.pauseB[5], "<Button-1>",self.keyBindingEdit)
+        self.canvas.tag_bind(self.pauseB[6], "<Button-1>",self.keyBindingEdit)
+        coordsTop[1] += self.height/6
+        coordsTop[3] += self.height/6
+        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
+        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Cheat codes", fill = "white", font="Verdana 20 italic bold"))
+        coordsTop[1] += self.height/6
+        coordsTop[3] += self.height/6
+        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
+        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Exit to menu", fill = "white", font="Verdana 20 italic bold"))
+        if(osName == "Windows")
+            self.keys = {
+                "Up Key": 87,
+                "Left Key": 65,
+                "Down Key": 83,
+                "Right Key": 68,
+                "Space": 32,
+                "Machine Gun": 49,
+                "Shotgun": 50
+            }
+        else:
+            self.keys = {
+            "Up Key": 25,
+            "Left Key": 38,
+            "Down Key": 39,
+            "Right Key": 40,
+            "Space": 65,
+            "Machine Gun": 10,
+            "Shotgun": 11,
+            }
+    def keyBindingEdit(self):
+        pass
     def gameloop(self):
-        for i in self.zombies:
-            i.age()
-            if collideHitWithCoord(char.hitbox, i.x, i.y):
-                print("Game Over")
-                self.gameover = True
-        for z in self.drops:
-            if collideHitWithCoord(char.hitbox, z.x, z.y):
-                if z.choice == "Machine Gun":
-                    char.weapon.mgAmmo += 15
-                elif z.choice == "Shotgun":
-                    char.weapon.shotAmmo += 4
-                self.drops.remove(z)
-                z.kill()
-        char.weapon.buffer += 1
-        if char.weapon.buffer >= char.weapon.firerate:
-            char.weapon.buffer = 0
-            if char.weapon.mgFiring and char.weapon.currentWeapon == "Machine Gun":
-                if char.x <= self.mouseX:
-                    char.weapon.fire(char.weapon.rotation)
-                else:
-                    char.weapon.fire(char.weapon.rotation+math.pi)
-        for i in self.zombies:
-            for j in char.weapon.bullets:
-                if i != None and j != None:
-                    if i.state == "walk":
-                        if overlapping(getMatrix(i),getMatrix(j)):
-                            if random.randint( 0, 5) == 1:
-                                self.drops.append(Drop(i.x, i.y))
-                            i.kill()
-                            j.kill()
-
-                            self.score += 10
-        if self.zombies == []:
-            self.multiplier += 2
-            for i in range(self.multiplier):
-                self.zombies.append(Zombie())
-        self.ticks += 1
-        self.canvas.itemconfigure(self.tickText, text = str(self.score))
-        if char.weapon.currentWeapon == "Machine Gun":
-            self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.mgAmmo))
-        elif char.weapon.currentWeapon == "Shotgun":
-            self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.shotAmmo))
-
         self.canvas.pack()
-        char.move()
-        char.weapon.pointAtMouse()
-        char.weapon.advance()
+        if not self.paused:
+            for i in self.zombies:
+                i.age()
+                if collideHitWithCoord(char.hitbox, i.x, i.y):
+                    print("Game Over")
+                    self.gameover = True
+            for z in self.drops:
+                if collideHitWithCoord(char.hitbox, z.x, z.y):
+                    if z.choice == "Machine Gun":
+                        char.weapon.mgAmmo += 15
+                    elif z.choice == "Shotgun":
+                        char.weapon.shotAmmo += 4
+                    self.drops.remove(z)
+                    z.kill()
+            char.weapon.buffer += 1
+            if char.weapon.buffer >= char.weapon.firerate:
+                char.weapon.buffer = 0
+                if char.weapon.mgFiring and char.weapon.currentWeapon == "Machine Gun":
+                    if char.x <= self.mouseX:
+                        char.weapon.fire(char.weapon.rotation)
+                    else:
+                        char.weapon.fire(char.weapon.rotation+math.pi)
+            for i in self.zombies:
+                for j in char.weapon.bullets:
+                    if i != None and j != None:
+                        if i.state == "walk":
+                            if overlapping(getMatrix(i),getMatrix(j)):
+                                if random.randint( 0, 5) == 1:
+                                    self.drops.append(Drop(i.x, i.y))
+                                i.kill()
+                                j.kill()
+
+                                self.score += 10
+            if self.zombies == []:
+                self.multiplier += 2
+                for i in range(self.multiplier):
+                    self.zombies.append(Zombie())
+            self.ticks += 1
+            self.canvas.itemconfigure(self.tickText, text = str(self.score))
+            if char.weapon.currentWeapon == "Machine Gun":
+                self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.mgAmmo))
+            elif char.weapon.currentWeapon == "Shotgun":
+                self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.shotAmmo))
+
+
+            char.move()
+            char.weapon.pointAtMouse()
+            char.weapon.advance()
+
+
         if not self.gameover:
             self.window.after(self.loopSpeed,self.gameloop)
         else:
             self.window.destroy()
+
+    def unpause(self, event):
+        for i in range(len(self.pauseB)):
+            self.canvas.itemconfigure(self.pauseB[i], state = "hidden")
+            self.canvas.tag_lower(self.pauseB[i])
+        self.paused = False
+
+    def pause(self, event):
+        for i in range(len(self.pauseB)):
+            self.canvas.itemconfigure(self.pauseB[i], state = "normal")
+            self.canvas.tag_raise(self.pauseB[i])
+        self.paused = True
+
 
     def setBinds(self):
         self.canvas.bind()
@@ -139,39 +208,26 @@ class App():
         self.gameloop()
         self.canvas.pack()
         self.canvas.tag_raise(self.tickText)
+
         self.window.mainloop()
 
     def handleMouseMovement(self, event):
         self.mouseX, self.mouseY = event.x, event.y
 
     def keyPressedHandler(self, event):
-
-        if osName == "Windows":
-            uKey = 87
-            lKey = 65
-            dKey = 83
-            rKey = 68
-            space = 32
-            key_1 = 49
-            key_2 = 50
-        if osName == "Linux":
-            uKey = 25
-            lKey = 38
-            dKey = 39
-            rKey = 40
-        if event.keycode == uKey:
+        if event.keycode == self.keys["Up Key"]:
             #w pressed
             char.upPressed()
-        elif event.keycode == lKey:
+        elif event.keycode == self.keys["Left Key"]:
             #a pressed
             char.leftPressed()
-        elif event.keycode == dKey:
+        elif event.keycode == self.keys["Down Key"]:
             #s pressed
             char.downPressed()
-        elif event.keycode == rKey:
+        elif event.keycode == self.keys["Right Key"]:
             #d pressed
             char.rightPressed()
-        elif event.keycode == space:
+        elif event.keycode == self.keys["Space"]:
             char.weapon.mgFiring = True
             if (not self.spacePressed) and char.weapon.currentWeapon == "Shotgun":
                 if char.x <= self.mouseX:
@@ -179,13 +235,17 @@ class App():
                 else:
                     char.weapon.fire(char.weapon.rotation+math.pi)
                 self.spacePressed = 1
-        elif event.keycode == key_1:
+        elif event.keycode == self.keys["Machine Gun"]:
             char.weapon.currentWeapon = "Machine Gun"
             self.canvas.itemconfig(self.weaponText, text = "Weapon: Machine Gun")
-        elif event.keycode == key_2:
+        elif event.keycode == self.keys["Shotgun"]:
             char.weapon.currentWeapon = "Shotgun"
             self.canvas.itemconfig(self.weaponText, text = "Weapon: Shotgun")
-
+        elif event.keycode == escape:
+            if app.paused:
+                self.unpause(0)
+            else:
+                self.pause(0)
     def releaseHandler(self, event):
         if osName == "Windows":
             uKey = 87
@@ -198,6 +258,7 @@ class App():
             lKey = 38
             dKey = 39
             rKey = 40
+            space = 65
         if event.keycode == uKey:
             char.upRelease()
         if event.keycode == lKey:
@@ -285,7 +346,7 @@ class Zombie:
 
         self.x = random.randint(0, app.width)
         self.y = random.randint(0, app.height)
-        self.imageName = "appear\\appear_1.png"
+        self.imageName = "appear/appear_1.png"
         self.imageID = 1
         img = ImagePIL.open(self.imageName)
         self.targetWidth = 72
