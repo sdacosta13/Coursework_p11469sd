@@ -3,6 +3,7 @@ from PIL import ImageTk
 from PIL import Image as ImagePIL
 import math
 import random
+import database
 import sys
 """
 Written By Sam da Costa
@@ -57,6 +58,7 @@ class App():
         global osName
         self.width = 1920
         self.height = 1080
+        self.page = "Menu"
         self.spacePressed = 0
         self.mouseX = 0
         self.mouseY = 0
@@ -186,9 +188,11 @@ class App():
             char.move()
             char.weapon.pointAtMouse()
             char.weapon.advance()
-
         if not self.gameover:
-            self.window.after(self.loopSpeed, self.gameloop)
+            if self.page == "Menu":
+                self.window.after(self.loopSpeed, self.runMenu)
+            else:
+                self.window.after(self.loopSpeed, self.gameloop)
         else:
             self.window.destroy()
 
@@ -206,6 +210,11 @@ class App():
         self.unpause()
         self.main()
 
+    def setMenuToShow(self, event=None):
+        self.page = "Menu"
+
+    def loadGame(self, event=None):
+
     def runMenu(self, event=None):
         self.backgroundMenu = Background(self.width, self.height, name="guide_castle.png")
         self.pauseB = [MenuButton(self.width, self.height,
@@ -217,7 +226,7 @@ class App():
                        MenuButton(self.width, self.height,
                                   "Cheat Codes", 7, bindFunc=self.unpause),
                        MenuButton(self.width, self.height,
-                                  "Exit to menu", 9, bindFunc=self.runMenu)]
+                                  "Exit to menu", 9, bindFunc=self.setMenuToShow)]
         for i in self.pauseB:
             i.setHidden()
 
@@ -230,12 +239,14 @@ class App():
         self.menuButtons.append(MenuButton(self.width, self.height, "Intresting game name", 1))
         self.menuButtons.append(MenuButton(self.width, self.height,
                                            "Start game", 4, bindFunc=self.linkFunc))
-        self.menuButtons.append(MenuButton(self.width, self.height, "Load Game", 7))
+        self.menuButtons.append(MenuButton(self.width, self.height,
+                                           "Load Game", 7, bindFunc=loadGame))
         self.canvas.pack()
         self.window.mainloop()
         # self.canvas.itemconfigure(self.backgroundMenu, status="hidden")
 
     def main(self, event=None):
+        self.page = "Gameloop"
         self.backgroundGame = Background(self.width, self.height)
         self.weaponText = self.canvas.create_text(
             200, 15, fill="white", font="Verdana 20 italic bold", text="Weapon: "+char.weapon.currentWeapon)
@@ -247,11 +258,9 @@ class App():
         self.canvas.bind("<KeyRelease>", self.releaseHandler)
         self.canvas.bind("<Motion>", self.handleMouseMovement)
         self.zombies.append(Zombie())
-        self.gameloop()
-        self.canvas.pack()
         self.canvas.tag_raise(self.tickText)
-
-        self.window.mainloop()
+        self.canvas.pack()
+        self.gameloop()
 
     def handleMouseMovement(self, event):
         self.mouseX, self.mouseY = event.x, event.y
