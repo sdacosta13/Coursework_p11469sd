@@ -12,41 +12,46 @@ Dungeon sprites: https://0x72.itch.io/dungeontileset-ii
 Zombie sprites: https://opengameart.org/content/zombie-animations
 Shotgun shell sprite: https://opengameart.org/content/shotgun-0
 MG ammo: https://opengameart.org/content/2d-guns
+Backdrop for the menu: https://opengameart.org/content/opp2017-castle-tiles
 """
-
 
 
 def getPlatform():
     platforms = {
-        'linux1' : 'Linux',
-        'linux2' : 'Linux',
-        'win32' : 'Windows',
-        'linux' : 'Linux'
+        'linux1': 'Linux',
+        'linux2': 'Linux',
+        'win32': 'Windows',
+        'linux': 'Linux'
     }
     if sys.platform not in platforms:
         return sys.platform
 
     return platforms[sys.platform]
+
+
 global osName
 osName = getPlatform()
-print (osName)
+
 hitsOn = False
 
 
-def overlapping(a,b):
+def overlapping(a, b):
     global app
-
 
     if a[0] < b[2] and a[2] > b[0] and a[1] < b[3] and a[3] > b[1]:
         return True
     else:
         return False
 
+
 def getMatrix(obj):
     x = obj.x
     y = obj.y
-    list1 = [x - (obj.targetWidth/2), y - (obj.targetHeight/2),x + (obj.targetWidth/2),y + (obj.targetHeight/2)]
+    list1 = [x - (obj.targetWidth/2), y - (obj.targetHeight/2),
+             x + (obj.targetWidth/2), y + (obj.targetHeight/2)]
     return list1
+
+
 class App():
     def __init__(self):
         global osName
@@ -57,49 +62,56 @@ class App():
         self.mouseY = 0
         self.window = Tk()
         self.window.title("Game")
-        self.window.resizable(0,0)
+        self.window.resizable(0, 0)
         self.window.geometry('%dx%d' % (self.width, self.height))
-        self.canvas = Canvas(self.window, bg = "red", width = self.width, height = self.height)
+        self.canvas = Canvas(self.window, bg="red", width=self.width, height=self.height)
         self.canvas.focus_force()
         self.loopSpeed = 25
         self.ticks = 0
         self.moonwalk = 0
         self.zombies = []
-        self.tickText = self.canvas.create_text(self.width-100, 15, fill = "white", font="Verdana 20 italic bold", text=str(self.ticks))
+        self.tickText = self.canvas.create_text(
+            self.width-100, 15, fill="white", font="Verdana 20 italic bold", text=str(self.ticks))
         self.images = []
         self.multiplier = 1
         self.score = 0
         self.drops = []
         self.paused = False
         self.gameover = False
-        coordsTop = [self.width/2 - self.width/16,
-                        self.height/2 - (7*self.height/16),
-                        self.width/2 + self.width/16,
-                        self.height/2 - 5*self.height/16]
-        self.pauseB = [self.canvas.create_rectangle(0,0,self.width,self.height, fill = "red", state = "hidden"),
-        self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"),
-        self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Return to game", fill = "white", font="Verdana 20 italic bold")]
-        self.canvas.tag_bind(self.pauseB[1], "<Button-1>",self.unpause)
-        self.canvas.tag_bind(self.pauseB[2], "<Button-1>",self.unpause)
-        coordsTop[1] += self.height/6
-        coordsTop[3] += self.height/6
-        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
-        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Save", fill = "white", font="Verdana 20 italic bold"))
-        coordsTop[1] += self.height/6
-        coordsTop[3] += self.height/6
-        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
-        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Key bindings", fill = "white", font="Verdana 20 italic bold"))
-        self.canvas.tag_bind(self.pauseB[5], "<Button-1>",self.keyBindingEdit)
-        self.canvas.tag_bind(self.pauseB[6], "<Button-1>",self.keyBindingEdit)
-        coordsTop[1] += self.height/6
-        coordsTop[3] += self.height/6
-        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
-        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Cheat codes", fill = "white", font="Verdana 20 italic bold"))
-        coordsTop[1] += self.height/6
-        coordsTop[3] += self.height/6
-        self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill = "blue", state = "hidden"))
-        self.pauseB.append(self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state = "hidden", text = "Exit to menu", fill = "white", font="Verdana 20 italic bold"))
-        if(osName == "Windows")
+        # coordsTop = [self.width/2 - self.width/16,
+        #              self.height/2 - (7*self.height/16),
+        #              self.width/2 + self.width/16,
+        #              self.height/2 - 5*self.height/16]
+        # self.pauseB = [self.canvas.create_rectangle(0, 0, self.width, self.height, fill="red", state="hidden"),
+        #                self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"),
+        #                self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Return to game", fill="white", font="Verdana 20 italic bold")]
+        # self.canvas.tag_bind(self.pauseB[1], "<Button-1>", self.unpause)
+        # self.canvas.tag_bind(self.pauseB[2], "<Button-1>", self.unpause)
+        # coordsTop[1] += self.height/6
+        # coordsTop[3] += self.height/6
+        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
+        # self.pauseB.append(self.canvas.create_text(
+        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Save", fill="white", font="Verdana 20 italic bold"))
+        # coordsTop[1] += self.height/6
+        # coordsTop[3] += self.height/6
+        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
+        # self.pauseB.append(self.canvas.create_text(
+        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Key bindings", fill="white", font="Verdana 20 italic bold"))
+        # self.canvas.tag_bind(self.pauseB[5], "<Button-1>", self.keyBindingEdit)
+        # self.canvas.tag_bind(self.pauseB[6], "<Button-1>", self.keyBindingEdit)
+        # coordsTop[1] += self.height/6
+        # coordsTop[3] += self.height/6
+        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
+        # self.pauseB.append(self.canvas.create_text(
+        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Cheat codes", fill="white", font="Verdana 20 italic bold"))
+        # coordsTop[1] += self.height/6
+        # coordsTop[3] += self.height/6
+        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
+        # self.pauseB.append(self.canvas.create_text(
+        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Exit to menu", fill="white", font="Verdana 20 italic bold"))
+        # self.canvas.tag_bind
+
+        if(osName == "Windows"):
             self.keys = {
                 "Up Key": 87,
                 "Left Key": 65,
@@ -107,28 +119,32 @@ class App():
                 "Right Key": 68,
                 "Space": 32,
                 "Machine Gun": 49,
-                "Shotgun": 50
-            }
+                "Shotgun": 50,
+                "Escape": 0}
         else:
             self.keys = {
-            "Up Key": 25,
-            "Left Key": 38,
-            "Down Key": 39,
-            "Right Key": 40,
-            "Space": 65,
-            "Machine Gun": 10,
-            "Shotgun": 11,
+                "Up Key": 25,
+                "Left Key": 38,
+                "Down Key": 39,
+                "Right Key": 40,
+                "Space": 65,
+                "Machine Gun": 10,
+                "Shotgun": 11,
+                "Escape": 9
             }
+
     def keyBindingEdit(self):
         pass
+
     def gameloop(self):
         self.canvas.pack()
         if not self.paused:
             for i in self.zombies:
                 i.age()
                 if collideHitWithCoord(char.hitbox, i.x, i.y):
-                    print("Game Over")
-                    self.gameover = True
+                    if i.state == "walk":
+                        print("Game Over")
+                        self.gameover = True
             for z in self.drops:
                 if collideHitWithCoord(char.hitbox, z.x, z.y):
                     if z.choice == "Machine Gun":
@@ -149,8 +165,8 @@ class App():
                 for j in char.weapon.bullets:
                     if i != None and j != None:
                         if i.state == "walk":
-                            if overlapping(getMatrix(i),getMatrix(j)):
-                                if random.randint( 0, 5) == 1:
+                            if overlapping(getMatrix(i), getMatrix(j)):
+                                if random.randint(0, 5) == 1:
                                     self.drops.append(Drop(i.x, i.y))
                                 i.kill()
                                 j.kill()
@@ -161,44 +177,70 @@ class App():
                 for i in range(self.multiplier):
                     self.zombies.append(Zombie())
             self.ticks += 1
-            self.canvas.itemconfigure(self.tickText, text = str(self.score))
+            self.canvas.itemconfigure(self.tickText, text=str(self.score))
             if char.weapon.currentWeapon == "Machine Gun":
-                self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.mgAmmo))
+                self.canvas.itemconfigure(self.ammoText, text="Ammo: " + str(char.weapon.mgAmmo))
             elif char.weapon.currentWeapon == "Shotgun":
-                self.canvas.itemconfigure(self.ammoText, text = "Ammo: "+ str(char.weapon.shotAmmo))
-
+                self.canvas.itemconfigure(self.ammoText, text="Ammo: " + str(char.weapon.shotAmmo))
 
             char.move()
             char.weapon.pointAtMouse()
             char.weapon.advance()
 
-
         if not self.gameover:
-            self.window.after(self.loopSpeed,self.gameloop)
+            self.window.after(self.loopSpeed, self.gameloop)
         else:
             self.window.destroy()
 
-    def unpause(self, event):
+    def unpause(self, event=None):
         for i in range(len(self.pauseB)):
-            self.canvas.itemconfigure(self.pauseB[i], state = "hidden")
-            self.canvas.tag_lower(self.pauseB[i])
+            self.pauseB[i].setHidden()
         self.paused = False
 
     def pause(self, event):
         for i in range(len(self.pauseB)):
-            self.canvas.itemconfigure(self.pauseB[i], state = "normal")
-            self.canvas.tag_raise(self.pauseB[i])
+            self.pauseB[i].setNormal()
         self.paused = True
 
+    def linkFunc(self, event):
+        self.unpause()
+        self.main()
 
-    def setBinds(self):
-        self.canvas.bind()
+    def runMenu(self, event=None):
+        self.backgroundMenu = Background(self.width, self.height, name="guide_castle.png")
+        self.pauseB = [MenuButton(self.width, self.height,
+                                  "Return to Game", 1, bindFunc=self.unpause),
+                       MenuButton(self.width, self.height,
+                                  "Save", 3, bindFunc=self.unpause),
+                       MenuButton(self.width, self.height,
+                                  "Key Bindings", 5, bindFunc=self.unpause),
+                       MenuButton(self.width, self.height,
+                                  "Cheat Codes", 7, bindFunc=self.unpause),
+                       MenuButton(self.width, self.height,
+                                  "Exit to menu", 9, bindFunc=self.runMenu)]
+        for i in self.pauseB:
+            i.setHidden()
 
-    def main(self):
+        self.menuButtons = []
+        coords = [
+            (self.width/2)-(self.width/8), self.height/16,
+            (self.width/2)+(self.width/8), 3*self.height/16
+        ]
 
-        self.background = Background(self.width, self.height)
-        self.weaponText = self.canvas.create_text(200, 15, fill = "white", font="Verdana 20 italic bold", text="Weapon: "+char.weapon.currentWeapon)
-        self.ammoText = self.canvas.create_text(600, 15, fill = "white", font="Verdana 20 italic bold", text="Ammo: "+str(char.weapon.shotAmmo))
+        self.menuButtons.append(MenuButton(self.width, self.height, "Intresting game name", 1))
+        self.menuButtons.append(MenuButton(self.width, self.height,
+                                           "Start game", 4, bindFunc=self.linkFunc))
+        self.menuButtons.append(MenuButton(self.width, self.height, "Load Game", 7))
+        self.canvas.pack()
+        self.window.mainloop()
+        # self.canvas.itemconfigure(self.backgroundMenu, status="hidden")
+
+    def main(self, event=None):
+        self.backgroundGame = Background(self.width, self.height)
+        self.weaponText = self.canvas.create_text(
+            200, 15, fill="white", font="Verdana 20 italic bold", text="Weapon: "+char.weapon.currentWeapon)
+        self.ammoText = self.canvas.create_text(
+            600, 15, fill="white", font="Verdana 20 italic bold", text="Ammo: "+str(char.weapon.shotAmmo))
         self.canvas.tag_raise(char.img)
         self.canvas.tag_raise(char.weapon.skin)
         self.canvas.bind("<KeyPress>", self.keyPressedHandler)
@@ -216,16 +258,16 @@ class App():
 
     def keyPressedHandler(self, event):
         if event.keycode == self.keys["Up Key"]:
-            #w pressed
+            # w pressed
             char.upPressed()
         elif event.keycode == self.keys["Left Key"]:
-            #a pressed
+            # a pressed
             char.leftPressed()
         elif event.keycode == self.keys["Down Key"]:
-            #s pressed
+            # s pressed
             char.downPressed()
         elif event.keycode == self.keys["Right Key"]:
-            #d pressed
+            # d pressed
             char.rightPressed()
         elif event.keycode == self.keys["Space"]:
             char.weapon.mgFiring = True
@@ -237,40 +279,61 @@ class App():
                 self.spacePressed = 1
         elif event.keycode == self.keys["Machine Gun"]:
             char.weapon.currentWeapon = "Machine Gun"
-            self.canvas.itemconfig(self.weaponText, text = "Weapon: Machine Gun")
+            self.canvas.itemconfig(self.weaponText, text="Weapon: Machine Gun")
         elif event.keycode == self.keys["Shotgun"]:
             char.weapon.currentWeapon = "Shotgun"
-            self.canvas.itemconfig(self.weaponText, text = "Weapon: Shotgun")
-        elif event.keycode == escape:
+            self.canvas.itemconfig(self.weaponText, text="Weapon: Shotgun")
+        elif event.keycode == self.keys["Escape"]:
             if app.paused:
                 self.unpause(0)
             else:
                 self.pause(0)
+
     def releaseHandler(self, event):
-        if osName == "Windows":
-            uKey = 87
-            lKey = 65
-            dKey = 83
-            rKey = 68
-            space = 32
-        if osName == "Linux":
-            uKey = 25
-            lKey = 38
-            dKey = 39
-            rKey = 40
-            space = 65
-        if event.keycode == uKey:
+        if event.keycode == self.keys["Up Key"]:
             char.upRelease()
-        if event.keycode == lKey:
+        if event.keycode == self.keys["Left Key"]:
             char.leftRelease()
-        if event.keycode == dKey:
+        if event.keycode == self.keys["Down Key"]:
             char.downRelease()
-        if event.keycode == rKey:
+        if event.keycode == self.keys["Right Key"]:
             char.rightRelease()
-        if event.keycode == space:
+        if event.keycode == self.keys["Space"]:
             char.weapon.mgFiring = False
             if self.spacePressed:
                 self.spacePressed = 0
+
+
+class MenuButton:
+    def __init__(self, width, height, text, pos, fillCol="blue", bindFunc=None):
+        global app
+        coords = [
+            (width/2)-(width/8), height*(pos/16),
+            (width/2)+(width/8), height*((pos+2)/16)
+        ]
+        textCoord = [
+            width/2, height*(pos+1)/16
+        ]
+        self.rect = app.canvas.create_rectangle(*coords, fill=fillCol)
+        self.text = app.canvas.create_text(
+            textCoord, text=text, fill="white", font="Verdana 20 italic bold")
+        app.canvas.tag_bind(self.rect, "<Button-1>", bindFunc)
+        app.canvas.tag_bind(self.text, "<Button-1>", bindFunc)
+        app.canvas.tag_raise(self.rect)
+        app.canvas.tag_raise(self.text)
+
+    def setHidden(self):
+        app.canvas.itemconfigure(self.rect, state="hidden")
+        app.canvas.itemconfigure(self.text, state="hidden")
+        app.canvas.tag_lower(self.rect)
+        app.canvas.tag_lower(self.text)
+
+    def setNormal(self):
+        app.canvas.itemconfigure(self.rect, state="normal")
+        app.canvas.itemconfigure(self.text, state="normal")
+
+        app.canvas.tag_raise(self.rect)
+        app.canvas.tag_raise(self.text)
 
 
 class Weapon:
@@ -281,18 +344,19 @@ class Weapon:
         self.length = 70
         self.x = x
         self.y = y
-        self.currentWeapon = "Shotgun" #MG or Shotgun
+        self.currentWeapon = "Shotgun"  # MG or Shotgun
         self.references = []
-        self.coords = [x,y,x+self.length, y]
+        self.coords = [x, y, x+self.length, y]
         self.bullets = []
-        self.skin = app.canvas.create_line(self.coords,fill = "brown",width=width)
+        self.skin = app.canvas.create_line(self.coords, fill="brown", width=width)
         app.canvas.tag_lower(self.skin)
         self.mgFiring = False
         self.buffer = 0
-        self.firerate = 8 # increase to slow
+        self.firerate = 8  # increase to slow
         self.shotAmmo = 16
         self.mgAmmo = 60
-    def move(self,x,y):
+
+    def move(self, x, y):
         app.canvas.move(self.skin, x, y)
         self.x += x
         self.y += y
@@ -305,9 +369,11 @@ class Weapon:
 
     def rotate(self, angle):
         if app.mouseX < self.x:
-            self.coords = self.x, self.y, self.x+(self.length*math.cos(angle+math.pi)), self.y+(self.length*math.sin(angle+math.pi))
+            self.coords = self.x, self.y, self.x + \
+                (self.length*math.cos(angle+math.pi)), self.y+(self.length*math.sin(angle+math.pi))
         else:
-            self.coords = self.x, self.y, self.x+(self.length*math.cos(angle)), self.y+(self.length*math.sin(angle))
+            self.coords = self.x, self.y, self.x + \
+                (self.length*math.cos(angle)), self.y+(self.length*math.sin(angle))
         app.canvas.coords(self.skin, self.coords)
 
     def fire(self, angle):
@@ -330,6 +396,7 @@ class Weapon:
             self.bullets.append(buck5)
             self.bullets.append(buck6)
             self.shotAmmo -= 1
+
     def advance(self):
 
         for i in self.bullets:
@@ -339,6 +406,7 @@ class Weapon:
 
             else:
                 i.advance()
+
 
 class Zombie:
     def __init__(self):
@@ -351,12 +419,12 @@ class Zombie:
         img = ImagePIL.open(self.imageName)
         self.targetWidth = 72
         self.targetHeight = 94
-        img = img.resize((self.targetWidth,self.targetHeight))
-        photoImg = ImageTk.PhotoImage(img, master = app.window)
+        img = img.resize((self.targetWidth, self.targetHeight))
+        photoImg = ImageTk.PhotoImage(img, master=app.window)
         self.imgRef = photoImg
-        self.img = app.canvas.create_image(self.x,self.y,image= photoImg)
+        self.img = app.canvas.create_image(self.x, self.y, image=photoImg)
         self.buffer = 0
-        self.state ="birth"
+        self.state = "birth"
         self.speed = 5
         self.direction = "L"
 
@@ -384,7 +452,6 @@ class Zombie:
         self.x += moveX
         self.y += moveY
 
-
     def age(self):
         if self.state == "walk":
             self.move()
@@ -398,10 +465,10 @@ class Zombie:
                     self.imageName[14] = str(self.imageID)
                     self.imageName = "".join(self.imageName)
                     img = ImagePIL.open(self.imageName)
-                    img = img.resize((72,94))
-                    photoImg = ImageTk.PhotoImage(img, master = app.window)
+                    img = img.resize((72, 94))
+                    photoImg = ImageTk.PhotoImage(img, master=app.window)
                     self.imgRef = photoImg
-                    self.img = app.canvas.create_image(self.x,self.y,image= photoImg)
+                    self.img = app.canvas.create_image(self.x, self.y, image=photoImg)
                     if self.imageID == 10:
                         self.state = "walk"
                         self.imageID = 0
@@ -416,10 +483,10 @@ class Zombie:
                         self.imageName[10] = "L"
                     self.imageName = "".join(self.imageName)
                     img = ImagePIL.open(self.imageName)
-                    img = img.resize((72,94))
-                    photoImg = ImageTk.PhotoImage(img, master = app.window)
+                    img = img.resize((72, 94))
+                    photoImg = ImageTk.PhotoImage(img, master=app.window)
                     self.imgRef = photoImg
-                    self.img = app.canvas.create_image(self.x,self.y,image= photoImg)
+                    self.img = app.canvas.create_image(self.x, self.y, image=photoImg)
                     self.imageID += 1
                 if self.imageID == 10:
                     self.imageID = 0
@@ -429,27 +496,21 @@ class Zombie:
                     self.imageName[9] = str(self.imageID)
                     self.imageName = "".join(self.imageName)
                     img = ImagePIL.open(self.imageName)
-                    img = img.resize((72,94))
-                    photoImg = ImageTk.PhotoImage(img, master = app.window)
+                    img = img.resize((72, 94))
+                    photoImg = ImageTk.PhotoImage(img, master=app.window)
                     self.imgRef = photoImg
-                    self.img = app.canvas.create_image(self.x,self.y,image= photoImg)
+                    self.img = app.canvas.create_image(self.x, self.y, image=photoImg)
                     self.imageID += 1
                     if self.imageID == 8:
                         del app.zombies[app.zombies.index(self)]
-
-
 
         else:
             self.buffer += 1
 
     def kill(self):
         self.imageID = 1
-        self.state ="die"
+        self.state = "die"
         self.imageName = "die//die_1.png"
-
-
-
-
 
 
 class Buckshot:
@@ -457,10 +518,10 @@ class Buckshot:
         img = ImagePIL.open("buckshot.png")
         self.targetWidth = 20
         self.targetHeight = 20
-        img = img.resize((self.targetWidth,self.targetHeight))
-        photoImg = ImageTk.PhotoImage(img, master = app.window)
+        img = img.resize((self.targetWidth, self.targetHeight))
+        photoImg = ImageTk.PhotoImage(img, master=app.window)
         char.weapon.references.append(photoImg)
-        self.img = app.canvas.create_image(x,y, image = photoImg)
+        self.img = app.canvas.create_image(x, y, image=photoImg)
         self.angle = angle
 
         self.fRange = fRange
@@ -473,7 +534,7 @@ class Buckshot:
             self.fRange -= 1
             moveX = self.distance*math.cos(self.angle)
             moveY = self.distance*math.sin(self.angle)
-            app.canvas.move(self.img, moveX,moveY)
+            app.canvas.move(self.img, moveX, moveY)
             self.x += moveX
             self.y += moveY
 
@@ -482,11 +543,7 @@ class Buckshot:
         del char.weapon.bullets[char.weapon.bullets.index(self)]
 
 
-
-
-
-
-def get2Dlist(x,y,fill = "#"):
+def get2Dlist(x, y, fill="#"):
     outer = []
     for y1 in range(y):
         inner = []
@@ -497,16 +554,13 @@ def get2Dlist(x,y,fill = "#"):
 
 
 class Background:
-    def __init__(self, width, height):
-        img = ImagePIL.open("background.png")
+    def __init__(self, width, height, name="background.png"):
+        img = ImagePIL.open(name)
         img = img.resize((width, height))
-        photoImg = ImageTk.PhotoImage(img, master = app.window)
+        photoImg = ImageTk.PhotoImage(img, master=app.window)
         app.window.background = photoImg
-        app.canvas.create_image(width/2,height/2,image = photoImg)
+        app.canvas.create_image(width/2, height/2, image=photoImg)
         app.canvas.tag_lower(photoImg)
-
-
-
 
 
 class Drop:
@@ -521,16 +575,15 @@ class Drop:
         elif self.choice == "Machine Gun":
             img = ImagePIL.open("ammobox.png")
         img = img.resize((int(width/20), int(height/20)))
-        photoImg = ImageTk.PhotoImage(img, master = app.window)
+        photoImg = ImageTk.PhotoImage(img, master=app.window)
         self.imageRef = photoImg
-        app.canvas.create_image(x, y, image = photoImg)
+        app.canvas.create_image(x, y, image=photoImg)
 
     def kill(self):
         del self
 
 
-
-def collideHitWithCoord(hitbox, x,y):
+def collideHitWithCoord(hitbox, x, y):
     coords = app.canvas.coords(hitbox)
     if (coords[0] < x < coords[2]) and (coords[1] < y < coords[3]):
         return True
@@ -539,63 +592,60 @@ def collideHitWithCoord(hitbox, x,y):
 
 
 class Sprite:
-    def __init__(self, image, x, y, showHitbox = False):
+    def __init__(self, image, x, y, showHitbox=False):
         global app
         self.moveSpeed = 15
-        img = PhotoImage(master = app.canvas, file=image)
+        img = PhotoImage(master=app.canvas, file=image)
         imgDimensions = [img.width(), img.height()]
         app.img = img
-        self.img = app.canvas.create_image(x, y, image = img)
-
-
+        self.img = app.canvas.create_image(x, y, image=img)
 
         if showHitbox:
-            self.hitbox = app.canvas.create_oval(x-(imgDimensions[0]/2),y-(imgDimensions[1]/2),x+(imgDimensions[0]/2),y+(imgDimensions[1]/2),fill = "blue", outline ="")
+            self.hitbox = app.canvas.create_oval(x-(imgDimensions[0]/2), y-(imgDimensions[1]/2), x+(
+                imgDimensions[0]/2), y+(imgDimensions[1]/2), fill="blue", outline="")
         else:
-            self.hitbox = app.canvas.create_oval(x-(imgDimensions[0]/2),y-(imgDimensions[1]/2),x+(imgDimensions[0]/2),y+(imgDimensions[1]/2), outline ="")
+            self.hitbox = app.canvas.create_oval(
+                x-(imgDimensions[0]/2), y-(imgDimensions[1]/2), x+(imgDimensions[0]/2), y+(imgDimensions[1]/2), outline="")
         app.canvas.tag_raise(self.img)
         app.canvas.tag_lower(self.hitbox)
 
 
-
 class Character(Sprite):
-    def __init__(self, image, x, y, showHitbox = False):
-        Sprite.__init__(self, image, x, y, showHitbox = showHitbox)
-        self.movement = [0,0,0,0]
-        self.cFront = PhotoImage(master = app.canvas, file = "cFront.png")
-        self.cLeft = PhotoImage(master = app.canvas, file = "cLeft.png")
-        self.cRight = PhotoImage(master = app.canvas, file = "cRight.png")
-        self.cBehind = PhotoImage(master = app.canvas, file = "cBehind.png")
-        self.weapon = Weapon(x,y)
+    def __init__(self, image, x, y, showHitbox=False):
+        Sprite.__init__(self, image, x, y, showHitbox=showHitbox)
+        self.movement = [0, 0, 0, 0]
+        self.cFront = PhotoImage(master=app.canvas, file="cFront.png")
+        self.cLeft = PhotoImage(master=app.canvas, file="cLeft.png")
+        self.cRight = PhotoImage(master=app.canvas, file="cRight.png")
+        self.cBehind = PhotoImage(master=app.canvas, file="cBehind.png")
+        self.weapon = Weapon(x, y)
         self.weapon.rotation = 0
         self.x = x
         self.y = y
+
     def upPressed(self):
         self.movement[0] = 1
         self.movement[2] = 0
-        app.canvas.itemconfigure(self.img, image = self.cBehind)
-
+        app.canvas.itemconfigure(self.img, image=self.cBehind)
 
     def leftPressed(self):
         self.movement[1] = 1
         self.movement[3] = 0
-        app.canvas.itemconfigure(self.img, image = self.cLeft)
+        app.canvas.itemconfigure(self.img, image=self.cLeft)
 
     def downPressed(self):
         self.movement[2] = 1
         self.movement[0] = 0
-        app.canvas.itemconfigure(self.img, image = self.cFront)
+        app.canvas.itemconfigure(self.img, image=self.cFront)
 
     def rightPressed(self):
         self.movement[3] = 1
         self.movement[1] = 0
-        app.canvas.itemconfigure(self.img, image = self.cRight)
-
+        app.canvas.itemconfigure(self.img, image=self.cRight)
 
     def upRelease(self):
         self.movement[0] = 0
         self.updateSkin()
-
 
     def leftRelease(self):
         self.movement[1] = 0
@@ -636,22 +686,18 @@ class Character(Sprite):
 
     def updateSkin(self):
         if self.movement[0]:
-            app.canvas.itemconfigure(self.img, image = self.cBehind)
+            app.canvas.itemconfigure(self.img, image=self.cBehind)
         elif self.movement[1]:
-            app.canvas.itemconfigure(self.img, image = self.cLeft)
+            app.canvas.itemconfigure(self.img, image=self.cLeft)
         elif self.movement[2]:
-            app.canvas.itemconfigure(self.img, image = self.cFront)
+            app.canvas.itemconfigure(self.img, image=self.cFront)
         elif self.movement[3]:
-            app.canvas.itemconfigure(self.img, image = self.cRight)
-
-
-
-
+            app.canvas.itemconfigure(self.img, image=self.cRight)
 
 
 global app
 app = App()
 
-char = Character("cFront.png", 100,100, showHitbox = hitsOn)
+char = Character("cFront.png", 100, 100, showHitbox=hitsOn)
 
-app.main()
+app.runMenu()
