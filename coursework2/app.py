@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import ImageTk
 from PIL import Image as ImagePIL
+from functools import partial
 import math
 import random
 import database
@@ -14,6 +15,7 @@ Zombie sprites: https://opengameart.org/content/zombie-animations
 Shotgun shell sprite: https://opengameart.org/content/shotgun-0
 MG ammo: https://opengameart.org/content/2d-guns
 Backdrop for the menu: https://opengameart.org/content/opp2017-castle-tiles
+https://opengameart.org/content/game-over-5
 """
 
 
@@ -60,59 +62,34 @@ class App():
         self.height = 1080
         self.page = "Menu"
         self.spacePressed = 0
+        self.saveName = ""
+        self.saving = 0
         self.mouseX = 0
         self.mouseY = 0
+        self.boss = 0
         self.window = Tk()
         self.window.title("Game")
         self.window.resizable(0, 0)
         self.window.geometry('%dx%d' % (self.width, self.height))
         self.canvas = Canvas(self.window, bg="red", width=self.width, height=self.height)
-        self.canvas.focus_force()
+        self.canvas.focus_set()
         self.loopSpeed = 25
         self.ticks = 0
         self.moonwalk = 0
         self.zombies = []
         self.tickText = self.canvas.create_text(
             self.width-100, 15, fill="white", font="Verdana 20 italic bold", text=str(self.ticks))
+        self.leaderboardText = self.canvas.create_text(
+            self.width/2, self.height/16, fill="white", font="Verdana 40 italic bold", text="Leaderboard", state="hidden")
+
         self.images = []
         self.multiplier = 1
         self.score = 0
         self.drops = []
         self.paused = False
+        self.leaderboardB = self.canvas.create_rectangle(
+            0, 0, self.width, self.height, fill="red", state="hidden")
         self.gameover = False
-        # coordsTop = [self.width/2 - self.width/16,
-        #              self.height/2 - (7*self.height/16),
-        #              self.width/2 + self.width/16,
-        #              self.height/2 - 5*self.height/16]
-        # self.pauseB = [self.canvas.create_rectangle(0, 0, self.width, self.height, fill="red", state="hidden"),
-        #                self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"),
-        #                self.canvas.create_text(self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Return to game", fill="white", font="Verdana 20 italic bold")]
-        # self.canvas.tag_bind(self.pauseB[1], "<Button-1>", self.unpause)
-        # self.canvas.tag_bind(self.pauseB[2], "<Button-1>", self.unpause)
-        # coordsTop[1] += self.height/6
-        # coordsTop[3] += self.height/6
-        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
-        # self.pauseB.append(self.canvas.create_text(
-        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Save", fill="white", font="Verdana 20 italic bold"))
-        # coordsTop[1] += self.height/6
-        # coordsTop[3] += self.height/6
-        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
-        # self.pauseB.append(self.canvas.create_text(
-        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Key bindings", fill="white", font="Verdana 20 italic bold"))
-        # self.canvas.tag_bind(self.pauseB[5], "<Button-1>", self.keyBindingEdit)
-        # self.canvas.tag_bind(self.pauseB[6], "<Button-1>", self.keyBindingEdit)
-        # coordsTop[1] += self.height/6
-        # coordsTop[3] += self.height/6
-        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
-        # self.pauseB.append(self.canvas.create_text(
-        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Cheat codes", fill="white", font="Verdana 20 italic bold"))
-        # coordsTop[1] += self.height/6
-        # coordsTop[3] += self.height/6
-        # self.pauseB.append(self.canvas.create_rectangle(*coordsTop, fill="blue", state="hidden"))
-        # self.pauseB.append(self.canvas.create_text(
-        #     self.width/2, ((coordsTop[3]-coordsTop[1])/2)+coordsTop[1], state="hidden", text="Exit to menu", fill="white", font="Verdana 20 italic bold"))
-        # self.canvas.tag_bind
-
         if(osName == "Windows"):
             self.keys = {
                 "Up Key": 87,
@@ -122,7 +99,10 @@ class App():
                 "Space": 32,
                 "Machine Gun": 49,
                 "Shotgun": 50,
-                "Escape": 0}
+                "Escape": 0,
+                "Return": 0,
+                "Boss Key": 0
+            }
         else:
             self.keys = {
                 "Up Key": 25,
@@ -132,20 +112,20 @@ class App():
                 "Space": 65,
                 "Machine Gun": 10,
                 "Shotgun": 11,
-                "Escape": 9
+                "Escape": 9,
+                "Return": 36,
+                "Boss Key": 56
             }
 
-    def keyBindingEdit(self):
-        pass
-
     def gameloop(self):
+        if self.boss:
+            self.bossImg.setNormal()
         self.canvas.pack()
         if not self.paused:
             for i in self.zombies:
                 i.age()
                 if collideHitWithCoord(char.hitbox, i.x, i.y):
                     if i.state == "walk":
-                        print("Game Over")
                         self.gameover = True
             for z in self.drops:
                 if collideHitWithCoord(char.hitbox, z.x, z.y):
@@ -194,7 +174,30 @@ class App():
             else:
                 self.window.after(self.loopSpeed, self.gameloop)
         else:
-            self.window.destroy()
+            self.page = "Menu"
+
+            self.window.after(self.loopSpeed, self.gameOverScreen)
+
+    def gameOverScreen(self, event=None):
+        self.gameOverScreen1 = Background(self.width, self.height, name="game_over.png")
+        self.canvas.tag_raise(self.gameOverScreen1)
+        self.window3 = SaveWindow()
+        self.window.after(5000, self.saveScore)
+
+    def saveScore(self, event=None):
+        while self.window3.data == "":
+            pass
+        database.update(app.saveName, char.weapon.shotAmmo,
+                        char.weapon.mgAmmo, self.multiplier, self.score)
+        self.window.after(5, self.runMenu)
+
+    def resetGame(self):
+        self.multiplier = 1
+        self.zombies = []
+        self.gameover = False
+        char.weapon.mgAmmo = 60
+        char.weapon.shotAmmo = 16
+        self.score = 0
 
     def unpause(self, event=None):
         for i in range(len(self.pauseB)):
@@ -207,22 +210,45 @@ class App():
         self.paused = True
 
     def linkFunc(self, event):
+        self.resetGame()
+        self.unpause()
+        self.main()
+
+    def startWithRec(self, event=None):
+        data = self.window2.data
+        char.weapon.shotAmmo = data[0]
+        char.weapon.mgAmmo = data[1]
+        self.multiplier = data[2]
+        self.score = data[3]
+        self.zombies = []
         self.unpause()
         self.main()
 
     def setMenuToShow(self, event=None):
         self.page = "Menu"
 
+    def saveGame(self, event=None):
+        self.window1 = SaveWindow()
+
     def loadGame(self, event=None):
+        self.window2 = LoadWindow()
+
+    def changeKeys(self, event=None):
+        self.window4 = Keys()
 
     def runMenu(self, event=None):
+        self.leaderboardButton = MenuButton(
+            self.width, self.height, "Menu", 13, bindFunc=self.returnToMenu)
+        self.leaderboardButton.setHidden()
+        self.bossImg = Background2(self.width, self.height, "excel.png")
+        self.bossImg.setHidden()
         self.backgroundMenu = Background(self.width, self.height, name="guide_castle.png")
         self.pauseB = [MenuButton(self.width, self.height,
                                   "Return to Game", 1, bindFunc=self.unpause),
                        MenuButton(self.width, self.height,
-                                  "Save", 3, bindFunc=self.unpause),
+                                  "Save", 3, bindFunc=self.saveGame),
                        MenuButton(self.width, self.height,
-                                  "Key Bindings", 5, bindFunc=self.unpause),
+                                  "Key Bindings", 5, bindFunc=self.changeKeys),
                        MenuButton(self.width, self.height,
                                   "Cheat Codes", 7, bindFunc=self.unpause),
                        MenuButton(self.width, self.height,
@@ -240,7 +266,9 @@ class App():
         self.menuButtons.append(MenuButton(self.width, self.height,
                                            "Start game", 4, bindFunc=self.linkFunc))
         self.menuButtons.append(MenuButton(self.width, self.height,
-                                           "Load Game", 7, bindFunc=loadGame))
+                                           "Load Game", 7, bindFunc=self.loadGame))
+        self.menuButtons.append(MenuButton(self.width, self.height,
+                                           "Leaderboard", 10, bindFunc=self.loadBoard))
         self.canvas.pack()
         self.window.mainloop()
         # self.canvas.itemconfigure(self.backgroundMenu, status="hidden")
@@ -257,60 +285,97 @@ class App():
         self.canvas.bind("<KeyPress>", self.keyPressedHandler)
         self.canvas.bind("<KeyRelease>", self.releaseHandler)
         self.canvas.bind("<Motion>", self.handleMouseMovement)
-        self.zombies.append(Zombie())
+        for i in range(self.multiplier):
+            self.zombies.append(Zombie())
         self.canvas.tag_raise(self.tickText)
         self.canvas.pack()
         self.gameloop()
+
+    def loadBoard(self, event=None):
+        self.canvas.itemconfigure(self.leaderboardB, state="normal")
+        self.canvas.tag_raise(self.leaderboardB)
+        self.canvas.itemconfigure(self.leaderboardText, state="normal")
+        self.canvas.tag_raise(self.leaderboardText)
+        self.leaderboardButton.setNormal()
+        data = database.getScores()
+        self.leaderboardRecs = []
+        if(len(data) > 10):
+            data = data[0:10]
+        for i in range(len(data)):
+            self.leaderboardRecs.append(self.canvas.create_text(self.width/2, (self.height/16)*(i+2),
+                                                                fill="white", font="Verdana 20 italic bold", text=str(data[i][0]) + " " + str(data[i][1])))
+
+    def returnToMenu(self, event=None):
+        self.canvas.itemconfigure(self.leaderboardB, state="hidden")
+        self.canvas.itemconfigure(self.leaderboardText, state="hidden")
+        self.leaderboardButton.setHidden()
+        for i in self.leaderboardRecs:
+            self.canvas.itemconfigure(i, state="hidden")
 
     def handleMouseMovement(self, event):
         self.mouseX, self.mouseY = event.x, event.y
 
     def keyPressedHandler(self, event):
-        if event.keycode == self.keys["Up Key"]:
-            # w pressed
-            char.upPressed()
-        elif event.keycode == self.keys["Left Key"]:
-            # a pressed
-            char.leftPressed()
-        elif event.keycode == self.keys["Down Key"]:
-            # s pressed
-            char.downPressed()
-        elif event.keycode == self.keys["Right Key"]:
-            # d pressed
-            char.rightPressed()
-        elif event.keycode == self.keys["Space"]:
-            char.weapon.mgFiring = True
-            if (not self.spacePressed) and char.weapon.currentWeapon == "Shotgun":
-                if char.x <= self.mouseX:
-                    char.weapon.fire(char.weapon.rotation)
-                else:
-                    char.weapon.fire(char.weapon.rotation+math.pi)
-                self.spacePressed = 1
-        elif event.keycode == self.keys["Machine Gun"]:
-            char.weapon.currentWeapon = "Machine Gun"
-            self.canvas.itemconfig(self.weaponText, text="Weapon: Machine Gun")
-        elif event.keycode == self.keys["Shotgun"]:
-            char.weapon.currentWeapon = "Shotgun"
-            self.canvas.itemconfig(self.weaponText, text="Weapon: Shotgun")
-        elif event.keycode == self.keys["Escape"]:
-            if app.paused:
-                self.unpause(0)
+        if event.keycode == self.keys["Boss Key"]:
+            if not self.boss:
+                self.bossImg.setNormal()
+                self.boss = 1
+                print("run1")
+                for i in self.zombies:
+                    i.setNormal()
             else:
-                self.pause(0)
+                self.bossImg.setHidden()
+                self.boss = 0
+                print("run2")
+                for i in self.zombies:
+                    i.setHidden()
+        if not self.saving:
+            if event.keycode == self.keys["Up Key"]:
+                # w pressed
+                char.upPressed()
+            elif event.keycode == self.keys["Left Key"]:
+                # a pressed
+                char.leftPressed()
+            elif event.keycode == self.keys["Down Key"]:
+                # s pressed
+                char.downPressed()
+            elif event.keycode == self.keys["Right Key"]:
+                # d pressed
+                char.rightPressed()
+            elif event.keycode == self.keys["Space"]:
+                char.weapon.mgFiring = True
+                if (not self.spacePressed) and char.weapon.currentWeapon == "Shotgun":
+                    if char.x <= self.mouseX:
+                        char.weapon.fire(char.weapon.rotation)
+                    else:
+                        char.weapon.fire(char.weapon.rotation+math.pi)
+                    self.spacePressed = 1
+            elif event.keycode == self.keys["Machine Gun"]:
+                char.weapon.currentWeapon = "Machine Gun"
+                self.canvas.itemconfig(self.weaponText, text="Weapon: Machine Gun")
+            elif event.keycode == self.keys["Shotgun"]:
+                char.weapon.currentWeapon = "Shotgun"
+                self.canvas.itemconfig(self.weaponText, text="Weapon: Shotgun")
+            elif event.keycode == self.keys["Escape"]:
+                if app.paused:
+                    self.unpause(0)
+                else:
+                    self.pause(0)
 
     def releaseHandler(self, event):
-        if event.keycode == self.keys["Up Key"]:
-            char.upRelease()
-        if event.keycode == self.keys["Left Key"]:
-            char.leftRelease()
-        if event.keycode == self.keys["Down Key"]:
-            char.downRelease()
-        if event.keycode == self.keys["Right Key"]:
-            char.rightRelease()
-        if event.keycode == self.keys["Space"]:
-            char.weapon.mgFiring = False
-            if self.spacePressed:
-                self.spacePressed = 0
+        if not self.saving:
+            if event.keycode == self.keys["Up Key"]:
+                char.upRelease()
+            if event.keycode == self.keys["Left Key"]:
+                char.leftRelease()
+            if event.keycode == self.keys["Down Key"]:
+                char.downRelease()
+            if event.keycode == self.keys["Right Key"]:
+                char.rightRelease()
+            if event.keycode == self.keys["Space"]:
+                char.weapon.mgFiring = False
+                if self.spacePressed:
+                    self.spacePressed = 0
 
 
 class MenuButton:
@@ -417,6 +482,85 @@ class Weapon:
                 i.advance()
 
 
+class SaveWindow:
+    def __init__(self):
+        self.top = Toplevel()
+        self.top.title("Please enter your name")
+        self.entry = Entry(self.top)
+        self.entry.pack()
+        self.button = Button(self.top, text="Enter", command=self.quit)
+        self.button.pack()
+        self.data = ""
+
+    def quit(self):
+        app.saveName = self.entry.get()
+        self.data = self.entry.get()
+        database.update(app.saveName, char.weapon.shotAmmo,
+                        char.weapon.mgAmmo, app.multiplier, app.score)
+        self.top.destroy()
+
+
+class LoadWindow:
+    def __init__(self):
+        self.top = Toplevel()
+        self.top.title("Please Select Your Profile")
+        self.var = StringVar(self.top)
+        self.var.set("")
+        data = database.queryForNames()
+        newData = []
+        for i in data:
+            newData.append(str(i[0]))
+        self.selector = OptionMenu(self.top, self.var, *newData)
+        self.selector.pack()
+        self.button = Button(self.top, text="Enter", command=self.quit)
+        self.button.pack()
+
+    def quit(self):
+        if self.var != "":
+            userName = self.var.get()
+            self.data = database.query(userName)
+            self.top.destroy()
+            app.startWithRec()
+
+
+class Keys:
+    def __init__(self):
+        self.top = Toplevel()
+        self.top.title("Change Keys")
+
+        self.labels = []
+        self.labelsText = []
+        self.buttons = []
+        self.stringVars = []
+        self.focus = ""
+        i = 0
+        for key, value in app.keys.items():
+
+            self.labels.append(Label(self.top, text=key).grid(row=i, column=0))
+            self.labelsText.append(key)
+            buttonWithArg = partial(self.setKey, i)
+            x = StringVar(self.top, value)
+            self.stringVars.append(x)
+            self.buttons.append(Button(self.top, textvariable=x,
+                                       command=buttonWithArg).grid(row=i, column=1))
+
+            i += 1
+        self.top.bind("<KeyPress>", self.handleInput)
+        self.quitBut = Button(self.top, text="Quit", command=self.quit).grid(row=i+1, column=1)
+
+    def handleInput(self, event=None):
+        if self.focus != "":
+            app.keys[self.focus] = event.keycode
+            pos = self.labelsText.index(self.focus)
+            self.stringVars[pos].set(event.keycode)
+
+    def setKey(self, button):
+        self.focus = self.labelsText[button]
+
+    def quit(self, event=None):
+        self.top.destroy()
+
+
 class Zombie:
     def __init__(self):
         global app
@@ -436,6 +580,12 @@ class Zombie:
         self.state = "birth"
         self.speed = 5
         self.direction = "L"
+
+    def setHidden(self):
+        app.canvas.itemconfigure(self.img, state="hidden")
+
+    def setNormal(self):
+        app.canvas.itemconfigure(self.img, state="normal")
 
     def move(self):
         if not((char.x - self.x) == 0):
@@ -568,8 +718,25 @@ class Background:
         img = img.resize((width, height))
         photoImg = ImageTk.PhotoImage(img, master=app.window)
         app.window.background = photoImg
-        app.canvas.create_image(width/2, height/2, image=photoImg)
+        self.img = app.canvas.create_image(width/2, height/2, image=photoImg)
         app.canvas.tag_lower(photoImg)
+
+
+class Background2:
+    def __init__(self, width, height, name):
+        img = ImagePIL.open(name)
+        img = img.resize((width, height))
+        photoImg = ImageTk.PhotoImage(img, master=app.window)
+        self.ref = photoImg
+        self.img = app.canvas.create_image(width/2, height/2, image=photoImg)
+
+    def setHidden(self):
+        app.canvas.itemconfigure(self.img, state="hidden")
+        app.canvas.tag_lower(self.img)
+
+    def setNormal(self):
+        app.canvas.itemconfigure(self.img, state="normal")
+        app.canvas.tag_raise(self.img)
 
 
 class Drop:
