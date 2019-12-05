@@ -182,7 +182,7 @@ class App():
         self.gameOverScreen1 = Background(self.width, self.height, name="game_over.png")
         self.canvas.tag_raise(self.gameOverScreen1)
         self.window3 = SaveWindow()
-        self.window.after(5000, self.saveScore)
+        #self.window.after(5000, self.saveScore)
 
     def saveScore(self, event=None):
         while self.window3.data == "":
@@ -497,6 +497,8 @@ class SaveWindow:
         self.data = self.entry.get()
         database.update(app.saveName, char.weapon.shotAmmo,
                         char.weapon.mgAmmo, app.multiplier, app.score)
+        if app.gameover:
+            app.window.after(5, app.saveScore)
         self.top.destroy()
 
 
