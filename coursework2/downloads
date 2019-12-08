@@ -17,16 +17,6 @@ MG ammo: https://opengameart.org/content/2d-guns
 Backdrop for the menu: https://opengameart.org/content/opp2017-castle-tiles
 https://opengameart.org/content/game-over-5
 """
-"""
-Cheat Codes
-moonwalk = reverse zombie movement
-johnwick = infinite ammo
-invulnerable = invulnerablity
-"""
-
-global infinity
-
-infinity = float("inf")
 
 
 def getPlatform():
@@ -68,30 +58,24 @@ def getMatrix(obj):
 class App():
     def __init__(self):
         global osName
-        self.jw = 0
-        self.inv = 0
-        self.moonwalk = 0
         self.width = 1920
         self.height = 1080
         self.page = "Menu"
         self.spacePressed = 0
         self.saveName = ""
         self.saving = 0
-        self.cheatCodes = ["moonwalk", "johnwick", "invulnerable"]
-        self.cheats = None
         self.mouseX = 0
         self.mouseY = 0
-        self.activeCheatCodes = []
         self.boss = 0
         self.window = Tk()
         self.window.title("Game")
         self.window.resizable(0, 0)
         self.window.geometry('%dx%d' % (self.width, self.height))
         self.canvas = Canvas(self.window, bg="red", width=self.width, height=self.height)
-        self.canvas.bind("<KeyPress>", self.keyPressedHandler)
         self.canvas.focus_set()
         self.loopSpeed = 25
         self.ticks = 0
+        self.moonwalk = 0
         self.zombies = []
         self.tickText = self.canvas.create_text(
             self.width-100, 15, fill="white", font="Verdana 20 italic bold", text=str(self.ticks))
@@ -134,30 +118,14 @@ class App():
             }
 
     def gameloop(self):
-        global infinity
-        for i in self.activeCheatCodes:
-            if i == "moonwalk":
-                self.moonwalk = 1
-            elif i == "johnwick":
-                self.jw = 1
-                char.mgAmmo = infinity
-                char.shotAmmo = infinity
-            elif i == "invulnerable":
-                self.inv = 1
         if self.boss:
             self.bossImg.setNormal()
-            self.paused = 1
-            for i in self.zombies:
-                i.setHidden()
-        else:
-            for i in self.zombies:
-                i.setNormal()
         self.canvas.pack()
         if not self.paused:
             for i in self.zombies:
                 i.age()
                 if collideHitWithCoord(char.hitbox, i.x, i.y):
-                    if i.state == "walk" and not self.inv:
+                    if i.state == "walk":
                         self.gameover = True
             for z in self.drops:
                 if collideHitWithCoord(char.hitbox, z.x, z.y):
@@ -211,18 +179,16 @@ class App():
             self.window.after(self.loopSpeed, self.gameOverScreen)
 
     def gameOverScreen(self, event=None):
-        if not self.boss:
-            self.gameOverScreen1 = Background(self.width, self.height, name="game_over.png")
-            self.canvas.tag_raise(self.gameOverScreen1)
+        self.gameOverScreen1 = Background(self.width, self.height, name="game_over.png")
+        self.canvas.tag_raise(self.gameOverScreen1)
         self.window3 = SaveWindow()
-        # self.window.after(5000, self.saveScore)
+        self.window.after(5000, self.saveScore)
 
     def saveScore(self, event=None):
         while self.window3.data == "":
             pass
-        if self.window3.data != "####":
-            database.update(app.saveName, char.weapon.shotAmmo,
-                            char.weapon.mgAmmo, self.multiplier, self.score)
+        database.update(app.saveName, char.weapon.shotAmmo,
+                        char.weapon.mgAmmo, self.multiplier, self.score)
         self.window.after(5, self.runMenu)
 
     def resetGame(self):
@@ -270,13 +236,6 @@ class App():
     def changeKeys(self, event=None):
         self.window4 = Keys()
 
-    def addCheat(self, code):
-        if code not in self.activeCheatCodes:
-            self.activeCheatCodes.append(code)
-
-    def runCheatMenu(self, event=None):
-        self.cheats = cheatWindow()
-
     def runMenu(self, event=None):
         self.leaderboardButton = MenuButton(
             self.width, self.height, "Menu", 13, bindFunc=self.returnToMenu)
@@ -291,7 +250,7 @@ class App():
                        MenuButton(self.width, self.height,
                                   "Key Bindings", 5, bindFunc=self.changeKeys),
                        MenuButton(self.width, self.height,
-                                  "Cheat Codes", 7, bindFunc=self.runCheatMenu),
+                                  "Cheat Codes", 7, bindFunc=self.unpause),
                        MenuButton(self.width, self.height,
                                   "Exit to menu", 9, bindFunc=self.setMenuToShow)]
         for i in self.pauseB:
@@ -323,7 +282,7 @@ class App():
             600, 15, fill="white", font="Verdana 20 italic bold", text="Ammo: "+str(char.weapon.shotAmmo))
         self.canvas.tag_raise(char.img)
         self.canvas.tag_raise(char.weapon.skin)
-
+        self.canvas.bind("<KeyPress>", self.keyPressedHandler)
         self.canvas.bind("<KeyRelease>", self.releaseHandler)
         self.canvas.bind("<Motion>", self.handleMouseMovement)
         for i in range(self.multiplier):
@@ -361,12 +320,15 @@ class App():
             if not self.boss:
                 self.bossImg.setNormal()
                 self.boss = 1
-
+                print("run1")
+                for i in self.zombies:
+                    i.setNormal()
             else:
                 self.bossImg.setHidden()
                 self.boss = 0
-                self.paused = 0
-
+                print("run2")
+                for i in self.zombies:
+                    i.setHidden()
         if not self.saving:
             if event.keycode == self.keys["Up Key"]:
                 # w pressed
@@ -492,8 +454,7 @@ class Weapon:
         if self.currentWeapon == "Machine Gun" and self.mgAmmo != 0:
             buck = Buckshot(self.x, self.y, angle, 45)
             self.bullets.append(buck)
-            if not app.jw:
-                self.mgAmmo -= 1
+            self.mgAmmo -= 1
 
         elif self.currentWeapon == "Shotgun" and self.shotAmmo != 0:
             buck1 = Buckshot(self.x, self.y, angle, 45)
@@ -508,8 +469,7 @@ class Weapon:
             self.bullets.append(buck4)
             self.bullets.append(buck5)
             self.bullets.append(buck6)
-            if not app.jw:
-                self.shotAmmo -= 1
+            self.shotAmmo -= 1
 
     def advance(self):
 
@@ -531,20 +491,12 @@ class SaveWindow:
         self.button = Button(self.top, text="Enter", command=self.quit)
         self.button.pack()
         self.data = ""
-        self.top.protocol('WM_DELETE_WINDOW', self.close)
 
     def quit(self):
         app.saveName = self.entry.get()
         self.data = self.entry.get()
         database.update(app.saveName, char.weapon.shotAmmo,
                         char.weapon.mgAmmo, app.multiplier, app.score)
-        if app.gameover:
-            app.window.after(5, app.saveScore)
-        self.top.destroy()
-
-    def close(self):
-        self.data = "####"
-        app.window.after(5, app.saveScore)
         self.top.destroy()
 
 
@@ -569,27 +521,6 @@ class LoadWindow:
             self.data = database.query(userName)
             self.top.destroy()
             app.startWithRec()
-
-
-class cheatWindow:
-    def __init__(self):
-        self.top = Toplevel()
-        self.top.title("Enter Cheat Code")
-        self.stringVar = StringVar(self.top)
-        self.stringVar.set("")
-        self.entry = Entry(self.top, textvariable=self.stringVar).grid(row=0, column=0)
-
-        self.button = Button(self.top, text="Enter", command=self.quit).grid(row=0, column=1)
-
-        self.return1 = str()
-
-    def quit(self):
-        if self.stringVar.get() in app.cheatCodes:
-            self.return1 = self.stringVar.get()
-            app.addCheat(self.return1)
-            self.top.destroy()
-        else:
-            self.l2 = Label(self.top, text="Not Valid").grid(row=1, column=0)
 
 
 class Keys:
