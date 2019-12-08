@@ -67,12 +67,13 @@ def getMatrix(obj):
 
 class App():
     def __init__(self):
+        # declaring variables
         global osName
         self.jw = 0
         self.inv = 0
         self.moonwalk = 0
-        self.width = 1920
-        self.height = 1080
+        #self.width = 2560
+        #self.height = 1440
         self.page = "Menu"
         self.spacePressed = 0
         self.saveName = ""
@@ -84,6 +85,10 @@ class App():
         self.activeCheatCodes = []
         self.boss = 0
         self.window = Tk()
+
+        self.width = self.window.winfo_screenwidth()
+        self.height = self.window.winfo_screenheight()
+
         self.window.title("Game")
         self.window.resizable(0, 0)
         self.window.geometry('%dx%d' % (self.width, self.height))
