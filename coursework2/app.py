@@ -24,12 +24,10 @@ johnwick = infinite ammo
 invulnerable = invulnerablity
 """
 
-global infinity
-
-infinity = float("inf")
 
 
 def getPlatform():
+    """Used as keys are logged differently in event handler for windows and linux"""
     platforms = {
         'linux1': 'Linux',
         'linux2': 'Linux',
@@ -49,6 +47,7 @@ hitsOn = False
 
 
 def overlapping(a, b):
+    """Used to check if two hitboxes are colliding"""
     global app
 
     if a[0] < b[2] and a[2] > b[0] and a[1] < b[3] and a[3] > b[1]:
@@ -112,6 +111,7 @@ class App():
             0, 0, self.width, self.height, fill="red", state="hidden")
         self.gameover = False
         if(osName == "Windows"):
+
             self.keys = {
                 "Up Key": 87,
                 "Left Key": 65,
@@ -139,17 +139,17 @@ class App():
             }
 
     def gameloop(self):
-        global infinity
+        """main run loop"""
+        #check cheat codes
         for i in self.activeCheatCodes:
             if i == "moonwalk":
                 self.moonwalk = 1
             elif i == "johnwick":
                 self.jw = 1
-                char.mgAmmo = infinity
-                char.shotAmmo = infinity
+
             elif i == "invulnerable":
                 self.inv = 1
-        if self.boss:
+        if self.boss: #check boss key
             self.bossImg.setNormal()
             self.paused = 1
             for i in self.zombies:
@@ -159,12 +159,12 @@ class App():
                 i.setNormal()
         self.canvas.pack()
         if not self.paused:
-            for i in self.zombies:
+            for i in self.zombies: #run zombie logic
                 i.age()
                 if collideHitWithCoord(char.hitbox, i.x, i.y):
                     if i.state == "walk" and not self.inv:
                         self.gameover = True
-            for z in self.drops:
+            for z in self.drops: #check if char in contact with drops and update accordingly
                 if collideHitWithCoord(char.hitbox, z.x, z.y):
                     if z.choice == "Machine Gun":
                         char.weapon.mgAmmo += 15
@@ -180,7 +180,7 @@ class App():
                         char.weapon.fire(char.weapon.rotation)
                     else:
                         char.weapon.fire(char.weapon.rotation+math.pi)
-            for i in self.zombies:
+            for i in self.zombies: # check if zombies collide with bullets
                 for j in char.weapon.bullets:
                     if i != None and j != None:
                         if i.state == "walk":
@@ -191,13 +191,13 @@ class App():
                                 j.kill()
 
                                 self.score += 10
-            if self.zombies == []:
+            if self.zombies == []: #if all zombies are killed, add more
                 self.multiplier += 2
                 for i in range(self.multiplier):
                     self.zombies.append(Zombie())
             self.ticks += 1
             self.canvas.itemconfigure(self.tickText, text=str(self.score))
-            if char.weapon.currentWeapon == "Machine Gun":
+            if char.weapon.currentWeapon == "Machine Gun": #update text
                 self.canvas.itemconfigure(self.ammoText, text="Ammo: " + str(char.weapon.mgAmmo))
             elif char.weapon.currentWeapon == "Shotgun":
                 self.canvas.itemconfigure(self.ammoText, text="Ammo: " + str(char.weapon.shotAmmo))
@@ -205,7 +205,7 @@ class App():
             char.move()
             char.weapon.pointAtMouse()
             char.weapon.advance()
-        if not self.gameover:
+        if not self.gameover: # check which state to change the game to
             if self.page == "Menu":
                 self.window.after(self.loopSpeed, self.runMenu)
             else:
@@ -216,6 +216,7 @@ class App():
             self.window.after(self.loopSpeed, self.gameOverScreen)
 
     def gameOverScreen(self, event=None):
+        #load the gameover screen
         if not self.boss:
             self.gameOverScreen1 = Background(self.width, self.height, name="game_over.png")
             self.canvas.tag_raise(self.gameOverScreen1)
@@ -223,6 +224,7 @@ class App():
         # self.window.after(5000, self.saveScore)
 
     def saveScore(self, event=None):
+        #check the tk window and update the database
         while self.window3.data == "":
             pass
         if self.window3.data != "####":
@@ -231,6 +233,7 @@ class App():
         self.window.after(5, self.runMenu)
 
     def resetGame(self):
+        # reset game to start
         self.multiplier = 1
         self.zombies = []
         self.gameover = False
@@ -239,11 +242,13 @@ class App():
         self.score = 0
 
     def unpause(self, event=None):
+        #hide pause buttons
         for i in range(len(self.pauseB)):
             self.pauseB[i].setHidden()
         self.paused = False
 
     def pause(self, event):
+        #hide pause buttons
         for i in range(len(self.pauseB)):
             self.pauseB[i].setNormal()
         self.paused = True
@@ -254,6 +259,7 @@ class App():
         self.main()
 
     def startWithRec(self, event=None):
+        #load game from db
         data = self.window2.data
         char.weapon.shotAmmo = data[0]
         char.weapon.mgAmmo = data[1]
@@ -267,28 +273,35 @@ class App():
         self.page = "Menu"
 
     def saveGame(self, event=None):
+        #instansiate tk window
         self.window1 = SaveWindow()
 
     def loadGame(self, event=None):
+        #instansiate tk window
         self.window2 = LoadWindow()
 
     def changeKeys(self, event=None):
+        #instansiate changeKeys window
         self.window4 = Keys()
 
     def addCheat(self, code):
+        #add cheat code to be run next gameloop
         if code not in self.activeCheatCodes:
             self.activeCheatCodes.append(code)
 
     def runCheatMenu(self, event=None):
+        #run cheat tk window
         self.cheats = cheatWindow()
 
     def runMenu(self, event=None):
+        #load menu
         self.leaderboardButton = MenuButton(
             self.width, self.height, "Menu", 13, bindFunc=self.returnToMenu)
         self.leaderboardButton.setHidden()
         self.bossImg = Background2(self.width, self.height, "excel.png")
         self.bossImg.setHidden()
         self.backgroundMenu = Background(self.width, self.height, name="guide_castle.png")
+        #instansiate buttons
         self.pauseB = [MenuButton(self.width, self.height,
                                   "Return to Game", 1, bindFunc=self.unpause),
                        MenuButton(self.width, self.height,
@@ -299,7 +312,7 @@ class App():
                                   "Cheat Codes", 7, bindFunc=self.runCheatMenu),
                        MenuButton(self.width, self.height,
                                   "Exit to menu", 9, bindFunc=self.setMenuToShow)]
-        for i in self.pauseB:
+        for i in self.pauseB: # ensure pause
             i.setHidden()
 
         self.menuButtons = []
@@ -338,16 +351,18 @@ class App():
         self.gameloop()
 
     def loadBoard(self, event=None):
+        #load leaderboard
         self.canvas.itemconfigure(self.leaderboardB, state="normal")
         self.canvas.tag_raise(self.leaderboardB)
         self.canvas.itemconfigure(self.leaderboardText, state="normal")
         self.canvas.tag_raise(self.leaderboardText)
         self.leaderboardButton.setNormal()
+        #get data from the database
         data = database.getScores()
         self.leaderboardRecs = []
-        if(len(data) > 10):
+        if(len(data) > 10): # discard data
             data = data[0:10]
-        for i in range(len(data)):
+        for i in range(len(data)): # display records
             self.leaderboardRecs.append(self.canvas.create_text(self.width/2, (self.height/16)*(i+2),
                                                                 fill="white", font="Verdana 20 italic bold", text=str(data[i][0]) + " " + str(data[i][1])))
 
@@ -358,11 +373,11 @@ class App():
         for i in self.leaderboardRecs:
             self.canvas.itemconfigure(i, state="hidden")
 
-    def handleMouseMovement(self, event):
+    def handleMouseMovement(self, event): # grab mouseX and mouseY
         self.mouseX, self.mouseY = event.x, event.y
 
-    def keyPressedHandler(self, event):
-        if event.keycode == self.keys["Boss Key"]:
+    def keyPressedHandler(self, event): # handles presses
+        if event.keycode == self.keys["Boss Key"]: # set boss key
             if not self.boss:
                 self.bossImg.setNormal()
                 self.boss = 1
@@ -372,7 +387,7 @@ class App():
                 self.boss = 0
                 self.paused = 0
 
-        if not self.saving:
+        if not self.saving: # handle movement
             if event.keycode == self.keys["Up Key"]:
                 # w pressed
                 char.upPressed()
@@ -385,7 +400,7 @@ class App():
             elif event.keycode == self.keys["Right Key"]:
                 # d pressed
                 char.rightPressed()
-            elif event.keycode == self.keys["Space"]:
+            elif event.keycode == self.keys["Space"]: #fire logic
                 char.weapon.mgFiring = True
                 if (not self.spacePressed) and char.weapon.currentWeapon == "Shotgun":
                     if char.x <= self.mouseX:
@@ -399,13 +414,13 @@ class App():
             elif event.keycode == self.keys["Shotgun"]:
                 char.weapon.currentWeapon = "Shotgun"
                 self.canvas.itemconfig(self.weaponText, text="Weapon: Shotgun")
-            elif event.keycode == self.keys["Escape"]:
+            elif event.keycode == self.keys["Escape"]: # pause logic
                 if app.paused:
                     self.unpause(0)
                 else:
                     self.pause(0)
 
-    def releaseHandler(self, event):
+    def releaseHandler(self, event): # handle releases for smooth movement
         if not self.saving:
             if event.keycode == self.keys["Up Key"]:
                 char.upRelease()
@@ -423,7 +438,7 @@ class App():
 
 class MenuButton:
     def __init__(self, width, height, text, pos, fillCol="blue", bindFunc=None):
-        global app
+        global app # class for MenuButtons
         coords = [
             (width/2)-(width/8), height*(pos/16),
             (width/2)+(width/8), height*((pos+2)/16)
@@ -440,13 +455,13 @@ class MenuButton:
         app.canvas.tag_raise(self.text)
 
     def setHidden(self):
-        app.canvas.itemconfigure(self.rect, state="hidden")
+        app.canvas.itemconfigure(self.rect, state="hidden") #change state to hide
         app.canvas.itemconfigure(self.text, state="hidden")
         app.canvas.tag_lower(self.rect)
         app.canvas.tag_lower(self.text)
 
     def setNormal(self):
-        app.canvas.itemconfigure(self.rect, state="normal")
+        app.canvas.itemconfigure(self.rect, state="normal") # change state to normal
         app.canvas.itemconfigure(self.text, state="normal")
 
         app.canvas.tag_raise(self.rect)
@@ -456,6 +471,7 @@ class MenuButton:
 class Weapon:
     def __init__(self, x, y):
         global app
+        #controls rotation logic for the gun
         self.rotation = 0
         width = 10
         self.length = 70
@@ -474,17 +490,18 @@ class Weapon:
         self.mgAmmo = 60
 
     def move(self, x, y):
+        #used to bind the weapon to the char
         app.canvas.move(self.skin, x, y)
         self.x += x
         self.y += y
 
-    def pointAtMouse(self):
+    def pointAtMouse(self): #rotate object to aim at mouse
         if (app.mouseX-self.x != 0):
             angle = math.atan((app.mouseY-self.y)/(app.mouseX-self.x))
             self.rotate(angle)
             self.rotation = angle
 
-    def rotate(self, angle):
+    def rotate(self, angle): # rotation logic
         if app.mouseX < self.x:
             self.coords = self.x, self.y, self.x + \
                 (self.length*math.cos(angle+math.pi)), self.y+(self.length*math.sin(angle+math.pi))
@@ -493,14 +510,14 @@ class Weapon:
                 (self.length*math.cos(angle)), self.y+(self.length*math.sin(angle))
         app.canvas.coords(self.skin, self.coords)
 
-    def fire(self, angle):
+    def fire(self, angle): #fire logic
         if self.currentWeapon == "Machine Gun" and self.mgAmmo != 0:
             buck = Buckshot(self.x, self.y, angle, 45)
             self.bullets.append(buck)
-            if not app.jw:
+            if not app.jw: # cheatcode activator
                 self.mgAmmo -= 1
 
-        elif self.currentWeapon == "Shotgun" and self.shotAmmo != 0:
+        elif self.currentWeapon == "Shotgun" and self.shotAmmo != 0: #create multiple bullets at 1/32 of a degree from the center bullet
             buck1 = Buckshot(self.x, self.y, angle, 45)
             buck2 = Buckshot(self.x, self.y, angle+math.pi/32, 45)
             buck3 = Buckshot(self.x, self.y, angle-math.pi/32, 45)
@@ -516,18 +533,15 @@ class Weapon:
             if not app.jw:
                 self.shotAmmo -= 1
 
-    def advance(self):
-
+    def advance(self): # check bullet range
         for i in self.bullets:
-
             if i.fRange == 0:
                 i.kill()
-
             else:
                 i.advance()
 
 
-class SaveWindow:
+class SaveWindow: # tkinter window for saving
     def __init__(self):
         self.top = Toplevel()
         self.top.title("Please enter your name")
@@ -542,7 +556,7 @@ class SaveWindow:
         app.saveName = self.entry.get()
         self.data = self.entry.get()
         database.update(app.saveName, char.weapon.shotAmmo,
-                        char.weapon.mgAmmo, app.multiplier, app.score)
+                        char.weapon.mgAmmo, app.multiplier, app.score) #save to the db
         if app.gameover:
             app.window.after(5, app.saveScore)
         self.top.destroy()
@@ -553,7 +567,7 @@ class SaveWindow:
         self.top.destroy()
 
 
-class LoadWindow:
+class LoadWindow: # window for loading
     def __init__(self):
         self.top = Toplevel()
         self.top.title("Please Select Your Profile")
@@ -576,7 +590,7 @@ class LoadWindow:
             app.startWithRec()
 
 
-class cheatWindow:
+class cheatWindow: #window for cheatmenu
     def __init__(self):
         self.top = Toplevel()
         self.top.title("Enter Cheat Code")
@@ -597,7 +611,7 @@ class cheatWindow:
             self.l2 = Label(self.top, text="Not Valid").grid(row=1, column=0)
 
 
-class Keys:
+class Keys: #window for changing keys
     def __init__(self):
         self.top = Toplevel()
         self.top.title("Change Keys")
@@ -622,7 +636,7 @@ class Keys:
         self.top.bind("<KeyPress>", self.handleInput)
         self.quitBut = Button(self.top, text="Quit", command=self.quit).grid(row=i+1, column=1)
 
-    def handleInput(self, event=None):
+    def handleInput(self, event=None): #set key code of current focused button to the input
         if self.focus != "":
             app.keys[self.focus] = event.keycode
             pos = self.labelsText.index(self.focus)
@@ -636,7 +650,7 @@ class Keys:
 
 
 class Zombie:
-    def __init__(self):
+    def __init__(self): #zombie class to control movement
         global app
 
         self.x = random.randint(0, app.width)
@@ -655,7 +669,7 @@ class Zombie:
         self.speed = 5
         self.direction = "L"
 
-    def setHidden(self):
+    def setHidden(self): #change states
         app.canvas.itemconfigure(self.img, state="hidden")
 
     def setNormal(self):
@@ -663,7 +677,7 @@ class Zombie:
 
     def move(self):
         if not((char.x - self.x) == 0):
-            angle = math.atan((char.y-self.y)/(char.x-self.x))
+            angle = math.atan((char.y-self.y)/(char.x-self.x)) #controls movement and animation
         else:
             angle = math.pi/2
         if char.x < self.x:
@@ -685,7 +699,7 @@ class Zombie:
         self.x += moveX
         self.y += moveY
 
-    def age(self):
+    def age(self): # controls animation for different states of zombie life
         if self.state == "walk":
             self.move()
 
@@ -746,7 +760,7 @@ class Zombie:
         self.imageName = "die//die_1.png"
 
 
-class Buckshot:
+class Buckshot: # controls bullet movement
     def __init__(self, x, y, angle, fRange):
         img = ImagePIL.open("buckshot.png")
         self.targetWidth = 20
@@ -762,7 +776,7 @@ class Buckshot:
         self.y = y
         self.distance = 45
 
-    def advance(self):
+    def advance(self): # move using polar coordinates
         if self.fRange != 0:
             self.fRange -= 1
             moveX = self.distance*math.cos(self.angle)
@@ -776,7 +790,7 @@ class Buckshot:
         del char.weapon.bullets[char.weapon.bullets.index(self)]
 
 
-def get2Dlist(x, y, fill="#"):
+def get2Dlist(x, y, fill="#"): #creates a 2x2 matrix, depreciated
     outer = []
     for y1 in range(y):
         inner = []
@@ -786,7 +800,7 @@ def get2Dlist(x, y, fill="#"):
     return outer
 
 
-class Background:
+class Background: # creates the background
     def __init__(self, width, height, name="background.png"):
         img = ImagePIL.open(name)
         img = img.resize((width, height))
@@ -796,7 +810,7 @@ class Background:
         app.canvas.tag_lower(photoImg)
 
 
-class Background2:
+class Background2: # creates a different background
     def __init__(self, width, height, name):
         img = ImagePIL.open(name)
         img = img.resize((width, height))
@@ -813,7 +827,7 @@ class Background2:
         app.canvas.tag_raise(self.img)
 
 
-class Drop:
+class Drop: # controls the drops
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -833,7 +847,7 @@ class Drop:
         del self
 
 
-def collideHitWithCoord(hitbox, x, y):
+def collideHitWithCoord(hitbox, x, y): #collide a hitbox with a coord pair
     coords = app.canvas.coords(hitbox)
     if (coords[0] < x < coords[2]) and (coords[1] < y < coords[3]):
         return True
@@ -841,7 +855,7 @@ def collideHitWithCoord(hitbox, x, y):
         return False
 
 
-class Sprite:
+class Sprite: # base class for sprite, yes this was a bad idea, could have been merged with character
     def __init__(self, image, x, y, showHitbox=False):
         global app
         self.moveSpeed = 15
@@ -860,7 +874,7 @@ class Sprite:
         app.canvas.tag_lower(self.hitbox)
 
 
-class Character(Sprite):
+class Character(Sprite): # character class, controls movement
     def __init__(self, image, x, y, showHitbox=False):
         Sprite.__init__(self, image, x, y, showHitbox=showHitbox)
         self.movement = [0, 0, 0, 0]
@@ -934,7 +948,7 @@ class Character(Sprite):
             self.weapon.move(self.moveSpeed, 0)
             self.x += self.moveSpeed
 
-    def updateSkin(self):
+    def updateSkin(self): # controls skin animation
         if self.movement[0]:
             app.canvas.itemconfigure(self.img, image=self.cBehind)
         elif self.movement[1]:
@@ -944,7 +958,7 @@ class Character(Sprite):
         elif self.movement[3]:
             app.canvas.itemconfigure(self.img, image=self.cRight)
 
-
+#call to main func and creation of character
 global app
 app = App()
 
